@@ -56,21 +56,23 @@ class BaseEndpoint:
         if not request.token:
             raise InvalidRequestError(request=request,
                                       description='Missing token parameter.')
-    def _raise_on_invalid_client(self, request):
+
+    async def _raise_on_invalid_client(self, request):
         """Raise on failed client authentication."""
-        if self.request_validator.client_authentication_required(request):
-            if not self.request_validator.authenticate_client(request):
+        if await self.request_validator.client_authentication_required(request):
+            if not await self.request_validator.authenticate_client(request):
                 log.debug('Client authentication failed, %r.', request)
                 raise InvalidClientError(request=request)
-        elif not self.request_validator.authenticate_client_id(request.client_id, request):
+        elif not await self.request_validator.authenticate_client_id(
+                request.client_id, request):
             log.debug('Client authentication failed, %r.', request)
             raise InvalidClientError(request=request)
 
     def _raise_on_unsupported_token(self, request):
         """Raise on unsupported tokens."""
         if (request.token_type_hint and
-            request.token_type_hint in self.valid_token_types and
-            request.token_type_hint not in self.supported_token_types):
+                request.token_type_hint in self.valid_token_types and
+                request.token_type_hint not in self.supported_token_types):
             raise UnsupportedTokenTypeError(request=request)
 
     def _raise_on_bad_method(self, request):
